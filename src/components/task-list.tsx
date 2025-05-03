@@ -87,9 +87,9 @@ export function TaskList() {
   // Server-side rendering placeholder
   if (!isClient) {
     return (
-       <Card className="w-full shadow-lg border border-border rounded-lg">
+       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px]"> {/* Added min-height */}
         <CardHeader className="pt-6 pb-4">
-          <CardTitle className="text-2xl font-semibold text-foreground">Lista de Tareas</CardTitle>
+          <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle> {/* Adjusted title size */}
         </CardHeader>
         <CardContent className="pt-4 pb-6">
           <div className="space-y-4">
@@ -107,11 +107,14 @@ export function TaskList() {
   // Client-side rendering
   return (
     <TooltipProvider>
-       <Card className="w-full shadow-lg flex flex-col h-full max-h-[600px] border border-border rounded-lg">
+        {/* Removed flex properties, let Tabs component handle layout */}
+       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px]"> {/* Added min-height */}
         <CardHeader className="pt-6 pb-4">
-          <CardTitle className="text-2xl font-semibold text-foreground">Lista de Tareas</CardTitle>
+           {/* Adjusted title size for consistency */}
+          <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col flex-grow space-y-4 overflow-hidden pt-4 pb-6">
+         {/* Adjusted padding and structure for better fit in Tabs */}
+        <CardContent className="flex flex-col space-y-4 pt-2 pb-6 h-[calc(400px-80px)]"> {/* Calculate height based on min-height and header */}
           <div className="flex space-x-2">
             <Input
               type="text"
@@ -133,7 +136,8 @@ export function TaskList() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <ScrollArea className="flex-grow pr-4 -mr-4"> {/* Offset padding for scrollbar */}
+           {/* Use flex-grow on ScrollArea for dynamic height */}
+          <ScrollArea className="flex-grow pr-4 -mr-4">
             {tasks.length === 0 ? (
                <p className="text-muted-foreground text-center py-4">No hay tareas pendientes.</p>
              ) : (

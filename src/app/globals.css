@@ -26,7 +26,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%; /* Light Gray */
     --input: 214.3 31.8% 91.4%;
-    --ring: 215 20.2% 65.1%; /* Grayish Blue for focus */
+    --ring: 221.2 83.2% 53.3%; /* Blue (same as primary for better visibility) */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -40,7 +40,7 @@ body {
     --sidebar-accent: 210 40% 96.1%; /* Very Light Blue-Gray */
     --sidebar-accent-foreground: 222.2 47.4% 11.2%; /* Dark Blue */
     --sidebar-border: 214.3 31.8% 91.4%; /* Light Gray */
-    --sidebar-ring: 215 20.2% 65.1%; /* Grayish Blue for focus */
+    --sidebar-ring: 221.2 83.2% 53.3%; /* Blue (same as sidebar primary) */
   }
 
  .dark {
@@ -62,7 +62,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 91.2% 59.8%; /* Brighter Blue for focus */
+    --ring: 217.2 91.2% 59.8%; /* Brighter Blue (same as primary for dark) */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -76,7 +76,7 @@ body {
     --sidebar-accent: 217.2 32.6% 17.5%; /* Darker Blue-Gray */
     --sidebar-accent-foreground: 210 40% 98%; /* Near White */
     --sidebar-border: 217.2 32.6% 17.5%; /* Darker Blue-Gray */
-    --sidebar-ring: 217.2 91.2% 59.8%; /* Brighter Blue */
+    --sidebar-ring: 217.2 91.2% 59.8%; /* Brighter Blue (same as sidebar primary dark) */
   }
 }
 
