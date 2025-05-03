@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2 } from 'lucide-react'; // Removed Circle import
 import { cn } from "@/lib/utils";
 
 interface Task {
@@ -191,9 +191,7 @@ export function TaskList() {
                          {/* Add icon based on completion state */}
                         {task.completed ? (
                           <CheckCircle2 className="inline-block h-4 w-4 mr-2 text-primary" />
-                        ) : (
-                          <Circle className="inline-block h-4 w-4 mr-2 text-muted-foreground/50" />
-                        )}
+                        ) : null} {/* Removed the Circle icon here */}
                         {task.text}
                       </label>
                       <Tooltip>
