@@ -27,7 +27,7 @@ export function PomodoroTimer() {
   const [isActive, setIsActive] = useState(false);
   const [pomodoroCount, setPomodoroCount] = useState(0);
   const longBreakInterval = 4; // Long break after 4 pomodoros
-  const [timerEndAudio, setTimerEndAudio] = useState<HTMLAudioElement | null>(null); // State for audio object
+  // const [timerEndAudio, setTimerEndAudio] = useState<HTMLAudioElement | null>(null); // State for audio object - REMOVED
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [animatePulse, setAnimatePulse] = useState(false); // State for end animation
 
@@ -57,15 +57,16 @@ export function PomodoroTimer() {
 
     // Ensure this runs only in the browser for audio
     // NOTE: Assumes 'timer-end.mp3' exists in the public folder
-    if (typeof window !== "undefined") {
-       try {
-         const audio = new Audio('/timer-end.mp3');
-         setTimerEndAudio(audio);
-       } catch (error) {
-         console.error("Error loading timer end audio:", error);
-         // Handle error appropriately, maybe disable sound
-       }
-    }
+    // REMOVED AUDIO LOADING
+    // if (typeof window !== "undefined") {
+    //    try {
+    //      const audio = new Audio('/timer-end.mp3');
+    //      setTimerEndAudio(audio);
+    //    } catch (error) {
+    //      console.error("Error loading timer end audio:", error);
+    //      // Handle error appropriately, maybe disable sound
+    //    }
+    // }
   }, []); // Empty dependency array: runs only once on mount
 
    // Update timeLeft when durations change externally (from settings) AND timer is not active
@@ -145,8 +146,8 @@ export function PomodoroTimer() {
     clearInterval(intervalRef.current!);
     setIsActive(false);
 
-    // Play sound notification only on client
-    timerEndAudio?.play().catch(err => console.error("Error playing timer end sound:", err));
+    // Play sound notification only on client - REMOVED
+    // timerEndAudio?.play().catch(err => console.error("Error playing timer end sound:", err));
 
     // Trigger animation
     setAnimatePulse(true);
@@ -247,22 +248,7 @@ export function PomodoroTimer() {
   return (
     <TooltipProvider delayDuration={100}>
        <Card className="w-full max-w-md shadow-lg border border-border rounded-lg relative overflow-hidden transition-all duration-300">
-         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 z-10" // Ensure button is above progress
-                onClick={() => setIsSettingsOpen(true)}
-                aria-label="Configuración del temporizador"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Configurar duraciones</p>
-          </TooltipContent>
-        </Tooltip>
+         {/* Settings button moved below */}
 
         <CardHeader className="items-center pt-6 pb-4">
            {/* Mode Buttons */}
@@ -373,6 +359,23 @@ export function PomodoroTimer() {
                 <p>Reiniciar Temporizador Actual</p>
               </TooltipContent>
             </Tooltip>
+            {/* Settings button moved here */}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="rounded-md shadow w-[72px] h-12 flex items-center justify-center group transition-transform duration-150 ease-in-out active:scale-95"
+                        onClick={() => setIsSettingsOpen(true)}
+                        aria-label="Configuración del temporizador"
+                    >
+                        <Settings className="h-6 w-6 transition-transform duration-300 group-hover:rotate-45" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Configurar duraciones</p>
+                </TooltipContent>
+            </Tooltip>
           </div>
            {/* Pomodoro Count and Reset */}
           <div className="flex items-center space-x-2 pt-2">
@@ -417,22 +420,3 @@ export function PomodoroTimer() {
      </TooltipProvider>
    );
 }
-
-// Helper component or styles for the pulse animation
-// Add this to your globals.css or a relevant style file:
-/*
-@layer utilities {
-  @keyframes pulse-timer {
-    0%, 100% {
-      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
-    }
-    70% {
-       box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
-    }
-  }
-  .animate-pulse-timer {
-    animation: pulse-timer 1s cubic-bezier(0.4, 0, 0.6, 1);
-  }
-}
-*/
-

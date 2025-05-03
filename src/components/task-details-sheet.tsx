@@ -17,11 +17,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Save } from 'lucide-react';
+import { CalendarIcon, Save, Clock } from 'lucide-react'; // Added Clock
 import { cn } from "@/lib/utils";
-import { format, isValid } from 'date-fns';
+import { format, isValid, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Task } from './task-list'; // Import Task type
+import { TimePicker } from './time-picker'; // Import TimePicker
 
 interface TaskDetailsSheetProps {
   isOpen: boolean;
@@ -37,6 +38,11 @@ export function TaskDetailsSheet({
   onSave,
 }: TaskDetailsSheetProps) {
   const [editedTask, setEditedTask] = useState<Task>(task);
+  const [isClient, setIsClient] = useState(false); // State for client-side rendering
+
+  useEffect(() => {
+    setIsClient(true); // Mark as client-side after mount
+  }, []);
 
   // Update local state if the task prop changes (e.g., opening sheet with a different task)
   useEffect(() => {
@@ -49,12 +55,38 @@ export function TaskDetailsSheet({
   };
 
   const handleDateChange = (date: Date | undefined) => {
-     setEditedTask(prev => ({ ...prev, dueDate: date ?? null }));
+     // Keep existing time when date is selected or changed
+     let newDueDate = date ? new Date(date) : null;
+     if (newDueDate && editedTask.dueDate) {
+         newDueDate = setHours(newDueDate, editedTask.dueDate.getHours());
+         newDueDate = setMinutes(newDueDate, editedTask.dueDate.getMinutes());
+     }
+     setEditedTask(prev => ({ ...prev, dueDate: newDueDate }));
   };
+
+  const handleTimeChange = (date: Date | undefined) => {
+     // Update only the time part of the existing date or set new if no date
+     let newDueDate = editedTask.dueDate ? new Date(editedTask.dueDate) : new Date(); // Use today if no date exists
+     if (date) {
+         newDueDate = setHours(newDueDate, date.getHours());
+         newDueDate = setMinutes(newDueDate, date.getMinutes());
+     } else {
+         // If time is cleared, maybe reset time? Or handle as needed.
+         // For now, let's just update the state with null or the existing date without time changes if 'date' is undefined.
+         newDueDate = editedTask.dueDate; // Keep existing date/time
+     }
+     setEditedTask(prev => ({ ...prev, dueDate: newDueDate ?? null }));
+  };
+
 
   const handleSaveChanges = () => {
     onSave(editedTask);
   };
+
+  // Prevent rendering potentially mismatching HTML on server
+  if (!isClient) {
+      return null; // Or a basic loading state
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -62,7 +94,7 @@ export function TaskDetailsSheet({
         <SheetHeader>
           <SheetTitle>Detalles de la Tarea</SheetTitle>
           <SheetDescription>
-            Edita el nombre, añade notas o asigna una fecha límite.
+            Edita el nombre, añade notas o asigna una fecha y hora límite.
           </SheetDescription>
         </SheetHeader>
 
@@ -93,34 +125,41 @@ export function TaskDetailsSheet({
              />
            </div>
 
-           {/* Due Date */}
-          <div className="grid gap-2">
-             <Label>Fecha Límite</Label>
-             <Popover>
-               <PopoverTrigger asChild>
-                 <Button
-                   variant={"outline"}
-                   className={cn(
-                     "w-full justify-start text-left font-normal",
-                     !editedTask.dueDate && "text-muted-foreground"
-                   )}
-                 >
-                   <CalendarIcon className="mr-2 h-4 w-4" />
-                   {editedTask.dueDate && isValid(editedTask.dueDate)
-                      ? format(editedTask.dueDate, 'PPP', { locale: es })
-                     : <span>Seleccionar fecha</span>}
-                 </Button>
-               </PopoverTrigger>
-               <PopoverContent className="w-auto p-0" align="start">
-                 <Calendar
-                   mode="single"
-                   selected={editedTask.dueDate ?? undefined}
-                   onSelect={handleDateChange}
-                   initialFocus
-                   locale={es}
-                 />
-               </PopoverContent>
-             </Popover>
+           {/* Due Date & Time */}
+           <div className="grid gap-2">
+                <Label>Fecha y Hora Límite</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !editedTask.dueDate && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {editedTask.dueDate && isValid(editedTask.dueDate)
+                                ? format(editedTask.dueDate, 'PPP p', { locale: es }) // Format with date and time
+                                : <span>Seleccionar fecha y hora</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={editedTask.dueDate ?? undefined}
+                            onSelect={handleDateChange} // Updates the date part
+                            initialFocus
+                            locale={es}
+                        />
+                        {/* Time Picker shown below the calendar */}
+                        <div className="p-3 border-t border-border">
+                            <TimePicker
+                                setDate={handleTimeChange} // Updates the time part
+                                date={editedTask.dueDate ?? undefined}
+                            />
+                        </div>
+                    </PopoverContent>
+                </Popover>
            </div>
         </div>
 
@@ -136,5 +175,3 @@ export function TaskDetailsSheet({
     </Sheet>
   );
 }
-
-    

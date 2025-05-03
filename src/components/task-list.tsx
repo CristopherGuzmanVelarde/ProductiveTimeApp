@@ -11,21 +11,21 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, Trash2, CalendarIcon, Info, ClipboardList, Sparkles, PartyPopper } from 'lucide-react'; // Added Sparkles, PartyPopper
+import { Plus, Trash2, CalendarIcon, Info, ClipboardList, Sparkles, PartyPopper, Clock } from 'lucide-react'; // Added Sparkles, PartyPopper, Clock
 import { cn } from "@/lib/utils";
-import { format, parseISO, isValid } from 'date-fns'; // Import date-fns functions
+import { format, parseISO, isValid, setHours, setMinutes } from 'date-fns'; // Import date-fns functions
 import { es } from 'date-fns/locale'; // Import Spanish locale
 import { TaskDetailsSheet } from './task-details-sheet'; // Import the new sheet component
 // Import a confetti library (example: react-confetti)
 // You might need to install it: npm install react-confetti
 import Confetti from 'react-confetti';
-
+import { TimePicker } from './time-picker'; // Import TimePicker
 
 export interface Task {
   id: number;
   text: string;
   completed: boolean;
-  dueDate?: Date | null; // Changed to Date | null
+  dueDate?: Date | null; // Stays Date | null
   notes?: string; // Add notes field
 }
 
@@ -47,7 +47,7 @@ export function TaskList() {
   const [isClient, setIsClient] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const [taskCompleteAudio, setTaskCompleteAudio] = useState<HTMLAudioElement | null>(null); // State for completion audio
+  // const [taskCompleteAudio, setTaskCompleteAudio] = useState<HTMLAudioElement | null>(null); // State for completion audio - REMOVED
   const [showConfetti, setShowConfetti] = useState(false); // State for confetti animation
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 }); // State for confetti bounds
 
@@ -56,7 +56,8 @@ export function TaskList() {
 
   // Load tasks from localStorage on client-side mount
   useEffect(() => {
-    setIsClient(true);
+    setIsClient(true); // Set isClient true immediately in useEffect
+
     const storedTasks = localStorage.getItem('pomodoroTasks');
     if (storedTasks) {
        try {
@@ -78,28 +79,27 @@ export function TaskList() {
        }
     }
 
-     // Load completion sound - run only on client
-     // NOTE: Assumes 'task-complete.mp3' exists in the public folder
-    if (typeof window !== "undefined") {
-        try {
-            const audio = new Audio('/task-complete.mp3');
-            setTaskCompleteAudio(audio);
-        } catch (error) {
-            console.error("Error loading task complete audio:", error);
-        }
-        // Set initial window size for confetti
-        setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-        // Update window size on resize
-        const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize); // Cleanup listener
-    }
+     // Load completion sound - run only on client - REMOVED
+    // if (typeof window !== "undefined") {
+    //     try {
+    //         const audio = new Audio('/task-complete.mp3');
+    //         setTaskCompleteAudio(audio);
+    //     } catch (error) {
+    //         console.error("Error loading task complete audio:", error);
+    //     }
+    // }
 
-  }, []);
+    // Set initial window size and add resize listener
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize); // Cleanup listener
+
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   // Save tasks to localStorage whenever tasks change
   useEffect(() => {
-    if (isClient) {
+    if (isClient) { // Only save if on the client
         try {
             // Store dates as ISO strings
             const tasksToStore = tasks.map(task => ({
@@ -139,8 +139,8 @@ export function TaskList() {
     }));
 
     if (taskJustCompleted) {
-        // Play sound
-        taskCompleteAudio?.play().catch(err => console.error("Error playing task complete sound:", err));
+        // Play sound - REMOVED
+        // taskCompleteAudio?.play().catch(err => console.error("Error playing task complete sound:", err));
         // Trigger confetti
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 4000); // Show confetti for 4 seconds
@@ -153,10 +153,26 @@ export function TaskList() {
   };
 
   const updateTaskDueDate = (id: number, date: Date | undefined | null) => {
-    setTasks(prevTasks => prevTasks.map(task =>
-        task.id === id ? { ...task, dueDate: date ?? null } : task
-    ));
+    setTasks(prevTasks => prevTasks.map(task => {
+        if (task.id === id) {
+            // Keep existing time if date is updated, otherwise set to null
+            let newDueDate = date ? new Date(date) : null;
+            if (newDueDate && task.dueDate) {
+                newDueDate = setHours(newDueDate, task.dueDate.getHours());
+                newDueDate = setMinutes(newDueDate, task.dueDate.getMinutes());
+            }
+            return { ...task, dueDate: newDueDate };
+        }
+        return task;
+    }));
   };
+
+   const updateTaskDueTime = (id: number, date: Date | undefined | null) => {
+       setTasks(prevTasks => prevTasks.map(task =>
+           task.id === id ? { ...task, dueDate: date ?? null } : task
+       ));
+   };
+
 
    const updateTaskDetails = (updatedTask: Task) => {
      setTasks(prevTasks => prevTasks.map(task =>
@@ -211,6 +227,7 @@ export function TaskList() {
                    <div className="flex-grow h-4 bg-muted/60 rounded"></div>
                    {/* Placeholder Icons */}
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><CalendarIcon className="h-4 w-4" /></Button>
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Clock className="h-4 w-4" /></Button>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Info className="h-4 w-4" /></Button>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Trash2 className="h-4 w-4" /></Button>
                  </div>
@@ -219,6 +236,7 @@ export function TaskList() {
                    <Checkbox disabled className="rounded shadow-sm" />
                    <div className="flex-grow h-4 bg-muted/60 rounded w-2/3"></div>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><CalendarIcon className="h-4 w-4" /></Button>
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Clock className="h-4 w-4" /></Button>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Info className="h-4 w-4" /></Button>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-30"><Trash2 className="h-4 w-4" /></Button>
                  </div>
@@ -360,13 +378,13 @@ export function TaskList() {
                            {/* Sparkle emoji for completed tasks */}
                            {task.completed && <Sparkles className="inline-block ml-2 h-4 w-4 text-yellow-400" />}
                         </span>
-                         {/* Due Date Display */}
+                         {/* Due Date & Time Display */}
                          {task.dueDate && isValid(task.dueDate) && (
                             <span className={cn(
                                 "ml-2 text-xs",
                                 task.completed ? "text-muted-foreground/80" : "text-muted-foreground"
                                 )}>
-                                (🗓️ {format(task.dueDate, 'P', { locale: es })}) {/* Date emoji */}
+                                (🗓️ {format(task.dueDate, 'P p', { locale: es })}) {/* Date & Time emoji */}
                             </span>
                          )}
                       </div>
@@ -403,8 +421,14 @@ export function TaskList() {
                              initialFocus
                              locale={es}
                            />
+                            {task.dueDate && ( // Only show TimePicker if a date is selected
+                              <div className="p-3 border-t border-border">
+                                <TimePicker setDate={(date) => updateTaskDueTime(task.id, date)} date={task.dueDate} />
+                              </div>
+                            )}
                          </PopoverContent>
                        </Popover>
+
 
                        {/* Details Button */}
                         <Tooltip>
