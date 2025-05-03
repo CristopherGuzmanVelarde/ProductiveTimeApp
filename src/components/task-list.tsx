@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,19 +7,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react'; // Removed Circle import
+import { Calendar } from "@/components/ui/calendar"; // Import Calendar
+import { Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface Task {
   id: number;
   text: string;
   completed: boolean;
+  // Optional: Add date if you want to link tasks to dates
+  // date?: Date | string;
 }
 
 export function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [isClient, setIsClient] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // State for selected date
 
   // Load tasks from localStorage on client-side mount
   useEffect(() => {
@@ -60,6 +63,8 @@ export function TaskList() {
       id: Date.now(), // Use timestamp for a simple unique ID
       text: newTaskText.trim(),
       completed: false,
+      // Optional: Assign selected date
+      // date: selectedDate?.toISOString().split('T')[0], // Store as YYYY-MM-DD string
     };
     // Add task with a subtle animation feel (though CSS handles the real animation)
     setTasks(prevTasks => [newTask, ...prevTasks]); // Add to the top
@@ -87,6 +92,15 @@ export function TaskList() {
     }
   };
 
+  // Filter tasks based on selected date (optional, uncomment if needed)
+  // const filteredTasks = tasks.filter(task => {
+  //   if (!selectedDate) return true; // Show all if no date selected
+  //   if (!task.date) return false; // Hide tasks without dates if a date is selected
+  //   const taskDate = new Date(task.date + 'T00:00:00'); // Ensure comparison is date-only
+  //   const selected = new Date(selectedDate.toDateString()); // Ensure comparison is date-only
+  //   return taskDate.getTime() === selected.getTime();
+  // });
+
   // Server-side rendering placeholder
   if (!isClient) {
     return (
@@ -96,6 +110,10 @@ export function TaskList() {
         </CardHeader>
         <CardContent className="pt-4 pb-6">
           <div className="space-y-4">
+            {/* Placeholder for Calendar */}
+            <div className="flex justify-center mb-4">
+               <div className="w-[280px] h-[310px] bg-muted rounded-md p-3 animate-pulse"></div>
+            </div>
             <div className="flex space-x-2">
                <Input disabled placeholder="Añadir nueva tarea..." className="flex-grow" />
                <Button disabled><Plus className="h-4 w-4" /></Button>
@@ -107,16 +125,7 @@ export function TaskList() {
                    <div className="flex-grow h-4 bg-muted rounded"></div>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
                  </div>
-                <div className="flex items-center space-x-3 p-2 rounded-md">
-                   <Checkbox disabled className="rounded shadow-sm" />
-                   <div className="flex-grow h-4 bg-muted rounded w-3/4"></div>
-                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
-                 </div>
-                <div className="flex items-center space-x-3 p-2 rounded-md">
-                    <Checkbox disabled className="rounded shadow-sm" />
-                    <div className="flex-grow h-4 bg-muted rounded w-1/2"></div>
-                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
-                </div>
+                {/* Add more skeleton items if desired */}
              </div>
           </div>
         </CardContent>
@@ -127,15 +136,26 @@ export function TaskList() {
   // Client-side rendering
   return (
     <TooltipProvider delayDuration={100}>
-       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px] flex flex-col"> {/* Added flex flex-col */}
-        <CardHeader className="pt-6 pb-4 flex-shrink-0"> {/* Prevent header shrinking */}
+       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px] flex flex-col">
+        <CardHeader className="pt-6 pb-4 flex-shrink-0">
           <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col space-y-4 pt-2 pb-6 flex-grow overflow-hidden"> {/* flex-grow and overflow-hidden */}
-          <div className="flex space-x-2 flex-shrink-0"> {/* Prevent input shrinking */}
+        <CardContent className="flex flex-col gap-6 pt-2 pb-6 flex-grow overflow-hidden"> {/* Increased gap */}
+           {/* Calendar */}
+           <div className="flex justify-center flex-shrink-0">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border shadow-sm p-3 bg-card" // Added styling
+              />
+            </div>
+
+           {/* Task Input */}
+          <div className="flex space-x-2 flex-shrink-0">
             <Input
               type="text"
-              placeholder="Añadir nueva tarea..."
+              placeholder="Añadir nueva tarea para hoy..." // Updated placeholder
               value={newTaskText}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -158,11 +178,15 @@ export function TaskList() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <ScrollArea className="flex-grow pr-4 -mr-4"> {/* Let ScrollArea handle scrolling */}
-            {tasks.length === 0 ? (
-               <p className="text-muted-foreground text-center py-10 italic">¡Todo listo por hoy!</p>
+
+          {/* Task List */}
+          <ScrollArea className="flex-grow pr-4 -mr-4">
+             {/* Use filteredTasks here if implementing date filtering */}
+             {tasks.length === 0 ? (
+               <p className="text-muted-foreground text-center py-10 italic">¡No hay tareas para hoy!</p> // Updated empty state
              ) : (
                 <ul className="space-y-3">
+                  {/* Use filteredTasks.map if implementing filtering */}
                   {tasks.map(task => (
                     <li
                       key={task.id}
@@ -191,7 +215,7 @@ export function TaskList() {
                          {/* Add icon based on completion state */}
                         {task.completed ? (
                           <CheckCircle2 className="inline-block h-4 w-4 mr-2 text-primary" />
-                        ) : null} {/* Removed the Circle icon here */}
+                        ) : null}
                         {task.text}
                       </label>
                       <Tooltip>
@@ -224,4 +248,3 @@ export function TaskList() {
     </TooltipProvider>
   );
 }
-
