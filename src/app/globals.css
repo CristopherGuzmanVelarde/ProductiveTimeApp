@@ -60,8 +60,9 @@
 }
 
 
-/* Task List Animation */
+/* Task List & Timer Animations */
 @layer utilities {
+  /* Task appearance animation */
   @keyframes task-appear {
     from {
       opacity: 0;
@@ -77,5 +78,18 @@
     animation: task-appear 0.3s ease-out forwards;
     /* Stagger animation based on custom property --animation-order */
     animation-delay: calc(var(--animation-order, 0) * 50ms);
+  }
+
+   /* Timer pulse animation */
+  @keyframes pulse-timer {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+    }
+    70% {
+       box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
+    }
+  }
+  .animate-pulse-timer {
+    animation: pulse-timer 1s cubic-bezier(0.4, 0, 0.6, 1);
   }
 }
