@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -6,24 +7,39 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar } from "@/components/ui/calendar"; // Import Calendar
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { Calendar } from "@/components/ui/calendar";
+import { Plus, Trash2, CheckCircle2, ClipboardList, CalendarIcon, Info } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { format, parseISO, isValid } from 'date-fns'; // Import date-fns functions
+import { es } from 'date-fns/locale'; // Import Spanish locale
+import { TaskDetailsSheet } from './task-details-sheet'; // Import the new sheet component
 
-interface Task {
+export interface Task {
   id: number;
   text: string;
   completed: boolean;
-  // Optional: Add date if you want to link tasks to dates
-  // date?: Date | string;
+  dueDate?: Date | null; // Changed to Date | null
+  notes?: string; // Add notes field
 }
+
+const taskTemplates = [
+    "Planificar la semana",
+    "Revisar correos electrónicos",
+    "Hacer ejercicio",
+    "Llamar a [Nombre]",
+    "Preparar informe",
+    "Leer [Libro/Artículo]",
+];
 
 export function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // State for selected date
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
 
   // Load tasks from localStorage on client-side mount
   useEffect(() => {
@@ -31,9 +47,14 @@ export function TaskList() {
     const storedTasks = localStorage.getItem('pomodoroTasks');
     if (storedTasks) {
        try {
-        const parsedTasks = JSON.parse(storedTasks);
+        const parsedTasks: any[] = JSON.parse(storedTasks);
         if (Array.isArray(parsedTasks)) {
-            setTasks(parsedTasks);
+            // Revive dates from ISO strings
+            const tasksWithDates = parsedTasks.map(task => ({
+                ...task,
+                dueDate: task.dueDate ? parseISO(task.dueDate) : null,
+            }));
+            setTasks(tasksWithDates);
         } else {
             console.warn("Stored tasks are not an array, resetting.");
             localStorage.removeItem('pomodoroTasks');
@@ -49,10 +70,14 @@ export function TaskList() {
   useEffect(() => {
     if (isClient) {
         try {
-            localStorage.setItem('pomodoroTasks', JSON.stringify(tasks));
+            // Store dates as ISO strings
+            const tasksToStore = tasks.map(task => ({
+                ...task,
+                dueDate: task.dueDate instanceof Date && isValid(task.dueDate) ? task.dueDate.toISOString() : null,
+            }));
+            localStorage.setItem('pomodoroTasks', JSON.stringify(tasksToStore));
         } catch (error) {
             console.error("Error saving tasks to localStorage:", error);
-            // Optionally notify user or handle error
         }
     }
   }, [tasks, isClient]);
@@ -60,14 +85,13 @@ export function TaskList() {
   const addTask = () => {
     if (newTaskText.trim() === '') return;
     const newTask: Task = {
-      id: Date.now(), // Use timestamp for a simple unique ID
+      id: Date.now(),
       text: newTaskText.trim(),
       completed: false,
-      // Optional: Assign selected date
-      // date: selectedDate?.toISOString().split('T')[0], // Store as YYYY-MM-DD string
+      dueDate: null, // Initialize dueDate as null
+      notes: '', // Initialize notes
     };
-    // Add task with a subtle animation feel (though CSS handles the real animation)
-    setTasks(prevTasks => [newTask, ...prevTasks]); // Add to the top
+    setTasks(prevTasks => [newTask, ...prevTasks]);
     setNewTaskText('');
   };
 
@@ -78,9 +102,21 @@ export function TaskList() {
   };
 
   const deleteTask = (id: number) => {
-     // Optionally add a temporary "deleting" state or animation trigger here
     setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
+
+  const updateTaskDueDate = (id: number, date: Date | undefined | null) => {
+    setTasks(prevTasks => prevTasks.map(task =>
+        task.id === id ? { ...task, dueDate: date ?? null } : task
+    ));
+  };
+
+   const updateTaskDetails = (updatedTask: Task) => {
+     setTasks(prevTasks => prevTasks.map(task =>
+       task.id === updatedTask.id ? updatedTask : task
+     ));
+     setIsDetailsSheetOpen(false); // Close sheet after saving
+   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTaskText(e.target.value);
@@ -92,40 +128,42 @@ export function TaskList() {
     }
   };
 
-  // Filter tasks based on selected date (optional, uncomment if needed)
-  // const filteredTasks = tasks.filter(task => {
-  //   if (!selectedDate) return true; // Show all if no date selected
-  //   if (!task.date) return false; // Hide tasks without dates if a date is selected
-  //   const taskDate = new Date(task.date + 'T00:00:00'); // Ensure comparison is date-only
-  //   const selected = new Date(selectedDate.toDateString()); // Ensure comparison is date-only
-  //   return taskDate.getTime() === selected.getTime();
-  // });
+  const handleTaskClick = (task: Task) => {
+    setEditingTask(task);
+    setIsDetailsSheetOpen(true);
+  };
+
+  const handleTemplateSelect = (template: string) => {
+      setNewTaskText(template);
+      // Optionally focus the input field after selecting a template
+      // document.getElementById('new-task-input')?.focus();
+  };
 
   // Server-side rendering placeholder
   if (!isClient) {
     return (
-       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px]"> {/* Added min-height */}
+       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px]">
         <CardHeader className="pt-6 pb-4">
-          <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle> {/* Adjusted title size */}
+          <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
         <CardContent className="pt-4 pb-6">
           <div className="space-y-4">
-            {/* Placeholder for Calendar */}
-            <div className="flex justify-center mb-4">
-               <div className="w-[280px] h-[310px] bg-muted rounded-md p-3 animate-pulse"></div>
-            </div>
             <div className="flex space-x-2">
-               <Input disabled placeholder="Añadir nueva tarea..." className="flex-grow" />
+               <Input disabled placeholder="Añadir nueva tarea..." className="flex-grow" id="new-task-input"/>
+               {/* Placeholder for Templates Button */}
+               <Button disabled variant="outline" size="icon"><ClipboardList className="h-4 w-4" /></Button>
                <Button disabled><Plus className="h-4 w-4" /></Button>
             </div>
-             {/* Use Skeleton Loader for a better loading state */}
             <div className="space-y-3 pt-4">
                 <div className="flex items-center space-x-3 p-2 rounded-md">
                    <Checkbox disabled className="rounded shadow-sm" />
                    <div className="flex-grow h-4 bg-muted rounded"></div>
+                   {/* Placeholder for Calendar Icon */}
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><CalendarIcon className="h-4 w-4" /></Button>
+                   {/* Placeholder for Details Icon */}
+                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Info className="h-4 w-4" /></Button>
                    <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
                  </div>
-                {/* Add more skeleton items if desired */}
              </div>
           </div>
         </CardContent>
@@ -140,35 +178,50 @@ export function TaskList() {
         <CardHeader className="pt-6 pb-4 flex-shrink-0">
           <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6 pt-2 pb-6 flex-grow overflow-hidden"> {/* Increased gap */}
-           {/* Calendar */}
-           <div className="flex justify-center flex-shrink-0">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border shadow-sm p-3 bg-card" // Added styling
-              />
-            </div>
+        <CardContent className="flex flex-col gap-4 pt-2 pb-6 flex-grow overflow-hidden">
 
-           {/* Task Input */}
-          <div className="flex space-x-2 flex-shrink-0">
+           {/* Task Input & Templates */}
+          <div className="flex space-x-2 flex-shrink-0 items-center">
             <Input
+              id="new-task-input"
               type="text"
-              placeholder="Añadir nueva tarea para hoy..." // Updated placeholder
+              placeholder="Añadir nueva tarea..."
               value={newTaskText}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
               className="flex-grow rounded-md shadow-sm transition-shadow focus:shadow-md"
               aria-label="Nueva tarea"
             />
+            {/* Templates Dropdown */}
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" aria-label="Plantillas de tareas" className="rounded-md shadow">
+                                <ClipboardList className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Usar plantilla</p>
+                    </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                    {taskTemplates.map((template, index) => (
+                        <DropdownMenuItem key={index} onClick={() => handleTemplateSelect(template)}>
+                            {template}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Add Task Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                  <Button
                     onClick={addTask}
                     aria-label="Añadir Tarea"
                     className="rounded-md shadow transition-transform duration-150 ease-in-out active:scale-95"
-                    disabled={!newTaskText.trim()} // Disable if input is empty
+                    disabled={!newTaskText.trim()}
                   >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -181,52 +234,115 @@ export function TaskList() {
 
           {/* Task List */}
           <ScrollArea className="flex-grow pr-4 -mr-4">
-             {/* Use filteredTasks here if implementing date filtering */}
              {tasks.length === 0 ? (
-               <p className="text-muted-foreground text-center py-10 italic">¡No hay tareas para hoy!</p> // Updated empty state
+               <p className="text-muted-foreground text-center py-10 italic">¡No hay tareas pendientes!</p>
              ) : (
                 <ul className="space-y-3">
-                  {/* Use filteredTasks.map if implementing filtering */}
                   {tasks.map(task => (
                     <li
                       key={task.id}
                       className={cn(
-                          "flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ease-in-out group",
-                          task.completed ? "bg-secondary/50" : "hover:bg-secondary", // subtle background on complete
-                          "animate-task-appear" // Add appear animation class
+                          "flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ease-in-out group bg-card hover:bg-secondary/70", // Ensure background for hover clarity
+                          task.completed ? "opacity-70" : "", // Dim completed tasks
+                          "animate-task-appear"
                        )}
-                      style={{ '--animation-order': tasks.findIndex(t => t.id === task.id) } as React.CSSProperties} // Stagger animation
+                      style={{ '--animation-order': tasks.findIndex(t => t.id === task.id) } as React.CSSProperties}
                       >
                       <Checkbox
                         id={`task-${task.id}`}
                         checked={task.completed}
                         onCheckedChange={() => toggleTaskCompletion(task.id)}
                         aria-labelledby={`task-label-${task.id}`}
-                        className="rounded shadow-sm transition-colors duration-200"
+                        className="rounded shadow-sm transition-colors duration-200 flex-shrink-0"
                       />
-                      <label
-                        id={`task-label-${task.id}`}
-                        htmlFor={`task-${task.id}`}
-                        className={cn(
-                          "flex-grow cursor-pointer text-sm break-words transition-colors duration-200",
-                           task.completed ? "line-through text-muted-foreground italic" : "text-foreground"
-                         )}
+                      {/* Clickable Task Label Area */}
+                      <div
+                        className="flex-grow cursor-pointer"
+                        onClick={() => handleTaskClick(task)}
                       >
-                         {/* Add icon based on completion state */}
-                        {task.completed ? (
-                          <CheckCircle2 className="inline-block h-4 w-4 mr-2 text-primary" />
-                        ) : null}
-                        {task.text}
-                      </label>
+                        <span
+                          id={`task-label-${task.id}`}
+                          className={cn(
+                            "text-sm break-words transition-colors duration-200",
+                             task.completed ? "line-through text-muted-foreground italic" : "text-foreground"
+                           )}
+                        >
+                          {task.text}
+                        </span>
+                         {/* Due Date Display */}
+                         {task.dueDate && isValid(task.dueDate) && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                                ({format(task.dueDate, 'P', { locale: es })})
+                            </span>
+                         )}
+                      </div>
+
+                       {/* Calendar Popover */}
+                       <Popover>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <PopoverTrigger asChild>
+                               <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                      "h-7 w-7 text-muted-foreground hover:text-primary transition-all duration-200 rounded-full flex-shrink-0",
+                                      "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                                      "hover:scale-110 active:scale-95"
+                                  )}
+                                  aria-label={`Asignar fecha límite a: ${task.text}`}
+                                >
+                                 <CalendarIcon className="h-4 w-4" />
+                               </Button>
+                             </PopoverTrigger>
+                           </TooltipTrigger>
+                           <TooltipContent side="left">
+                             <p>Fecha Límite</p>
+                           </TooltipContent>
+                         </Tooltip>
+                         <PopoverContent className="w-auto p-0" align="end">
+                           <Calendar
+                             mode="single"
+                             selected={task.dueDate ?? undefined}
+                             onSelect={(date) => updateTaskDueDate(task.id, date)}
+                             initialFocus
+                             locale={es}
+                           />
+                         </PopoverContent>
+                       </Popover>
+
+                       {/* Details Button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "h-7 w-7 text-muted-foreground hover:text-blue-500 transition-all duration-200 rounded-full flex-shrink-0",
+                                        "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                                        "hover:scale-110 active:scale-95"
+                                    )}
+                                    onClick={() => handleTaskClick(task)}
+                                    aria-label={`Ver detalles de: ${task.text}`}
+                                >
+                                    <Info className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                <p>Ver Detalles</p>
+                            </TooltipContent>
+                        </Tooltip>
+
+                      {/* Delete Button */}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
                              className={cn(
-                               "h-7 w-7 text-muted-foreground hover:text-destructive transition-all duration-200 rounded-full",
-                                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", // Make visible on hover/focus
-                               "hover:scale-110 active:scale-95" // Subtle scale animation
+                               "h-7 w-7 text-muted-foreground hover:text-destructive transition-all duration-200 rounded-full flex-shrink-0",
+                                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                               "hover:scale-110 active:scale-95"
                             )}
                             onClick={() => deleteTask(task.id)}
                             aria-label={`Eliminar tarea: ${task.text}`}
@@ -245,6 +361,19 @@ export function TaskList() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+       {/* Task Details Sheet */}
+       {editingTask && (
+         <TaskDetailsSheet
+           isOpen={isDetailsSheetOpen}
+           onOpenChange={setIsDetailsSheetOpen}
+           task={editingTask}
+           onSave={updateTaskDetails}
+         />
+       )}
+
     </TooltipProvider>
   );
 }
+
+    
