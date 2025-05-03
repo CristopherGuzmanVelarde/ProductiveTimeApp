@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -5,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, RefreshCw } from 'lucide-react';
 import { TimerSettingsModal, type TimerDurations } from './timer-settings';
+import { cn } from '@/lib/utils';
 
 type TimerMode = 'work' | 'shortBreak' | 'longBreak';
 
@@ -37,10 +39,14 @@ export function PomodoroTimer() {
     const savedWork = localStorage.getItem('pomodoroWorkDuration');
     const savedShort = localStorage.getItem('pomodoroShortBreakDuration');
     const savedLong = localStorage.getItem('pomodoroLongBreakDuration');
+    const savedCount = localStorage.getItem('pomodoroCount');
+
 
     setWorkDuration(savedWork ? parseInt(savedWork, 10) : DEFAULT_WORK_DURATION);
     setShortBreakDuration(savedShort ? parseInt(savedShort, 10) : DEFAULT_SHORT_BREAK_DURATION);
     setLongBreakDuration(savedLong ? parseInt(savedLong, 10) : DEFAULT_LONG_BREAK_DURATION);
+    setPomodoroCount(savedCount ? parseInt(savedCount, 10) : 0);
+
 
     // Ensure this runs only in the browser for audio
     if (typeof window !== "undefined") {
@@ -51,22 +57,22 @@ export function PomodoroTimer() {
    // Update timeLeft when durations change externally (from settings or initial load)
    useEffect(() => {
        // Update timeLeft only if the timer is not active or if the mode matches the changed duration
-       if (!isActive || mode === 'work') {
+       if (!isActive && mode === 'work') {
          setTimeLeft(workDuration);
        }
-   }, [workDuration]); // Rerun only if workDuration changes
+   }, [workDuration, mode, isActive]); // Rerun if workDuration, mode or isActive changes
 
    useEffect(() => {
-       if (!isActive || mode === 'shortBreak') {
+       if (!isActive && mode === 'shortBreak') {
           setTimeLeft(shortBreakDuration);
        }
-    }, [shortBreakDuration]); // Rerun only if shortBreakDuration changes
+    }, [shortBreakDuration, mode, isActive]); // Rerun if shortBreakDuration, mode or isActive changes
 
     useEffect(() => {
-        if (!isActive || mode === 'longBreak') {
+        if (!isActive && mode === 'longBreak') {
             setTimeLeft(longBreakDuration);
         }
-    }, [longBreakDuration]); // Rerun only if longBreakDuration changes
+    }, [longBreakDuration, mode, isActive]); // Rerun if longBreakDuration, mode or isActive changes
 
 
   useEffect(() => {
@@ -74,17 +80,28 @@ export function PomodoroTimer() {
       intervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
-            handleTimerEnd();
-            return 0;
+            // Timer will end, prepare for transition
+            return 0; // Set to 0, let the next effect handle the end logic
           }
           return prevTime - 1;
         });
       }, 1000);
-    } else if (!isActive || timeLeft <= 0) { // Clear interval if paused or time runs out
+    } else if (timeLeft <= 0 && isActive) {
+       // Time reached 0 while active, trigger end logic
+       handleTimerEnd();
+    } else { // Paused or already at 0 and inactive
       clearInterval(intervalRef.current!);
     }
     return () => clearInterval(intervalRef.current!);
   }, [isActive, timeLeft]); // Re-run if isActive or timeLeft changes
+
+  // Effect to handle saving pomodoro count to localStorage
+  useEffect(() => {
+      if (isClient) {
+          localStorage.setItem('pomodoroCount', pomodoroCount.toString());
+      }
+  }, [pomodoroCount, isClient]);
+
 
   useEffect(() => {
     // Update document title only on client
@@ -95,13 +112,13 @@ export function PomodoroTimer() {
     }
   }, [timeLeft, mode, isClient]);
 
+  // Reset timer display when mode changes (and timer not active)
   useEffect(() => {
-    // Reset timer display when mode changes, but only if not active
-    // If active, the timer continues until completion before mode switch effects take place
     if (!isActive) {
       resetTimerDisplay(mode);
     }
-  }, [mode]); // Run only when mode changes
+  }, [mode, isActive]); // Run when mode or isActive changes
+
 
   const resetTimerDisplay = (newMode: TimerMode) => {
       switch (newMode) {
@@ -135,7 +152,7 @@ export function PomodoroTimer() {
     }
     // Switch mode and reset the timer display for the new mode
     setMode(nextMode);
-    resetTimerDisplay(nextMode); // Explicitly set time for the next mode
+    // No need to call resetTimerDisplay here, the mode change effect will handle it
   };
 
 
@@ -147,31 +164,35 @@ export function PomodoroTimer() {
     setIsActive(!isActive);
   };
 
-  // Resets the current timer segment and optionally the pomodoro count
-  const resetCurrentTimer = (resetCount = false) => {
+  // Resets the current timer segment
+  const resetCurrentTimer = () => {
     clearInterval(intervalRef.current!);
     setIsActive(false);
     resetTimerDisplay(mode); // Reset time based on current mode and duration
-    if (resetCount && mode === 'work') {
-        setPomodoroCount(0); // Reset count only when explicitly asked during work mode reset
-    }
   };
+
+  // Resets the pomodoro count
+   const resetPomodoroCount = () => {
+       setPomodoroCount(0);
+   };
+
 
    // Switches mode and resets the timer
    const switchModeAndReset = (newMode: TimerMode) => {
+    // No need to switch if already in the mode
+    if (newMode === mode && !isActive) return;
+
     clearInterval(intervalRef.current!);
     setIsActive(false);
     setMode(newMode);
-    resetTimerDisplay(newMode);
-    // Optionally reset pomodoro count if switching back to work manually
-    // if (newMode === 'work') setPomodoroCount(0);
+    // The mode change effect will handle resetting the display
   };
 
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const getDurationForMode = (currentMode: TimerMode) => {
@@ -199,54 +220,57 @@ export function PomodoroTimer() {
        localStorage.setItem('pomodoroLongBreakDuration', newLongSec.toString());
      }
 
-
-     // If the current mode's duration changed, update timeLeft immediately IF timer is not active
+     // If the timer is not active, update timeLeft immediately for the current mode
      if (!isActive) {
-       if (mode === 'work') setTimeLeft(newWorkSec);
-       else if (mode === 'shortBreak') setTimeLeft(newShortSec);
-       else if (mode === 'longBreak') setTimeLeft(newLongSec);
+         if (mode === 'work') setTimeLeft(newWorkSec);
+         else if (mode === 'shortBreak') setTimeLeft(newShortSec);
+         else if (mode === 'longBreak') setTimeLeft(newLongSec);
      } else {
-       // If timer is active, let it finish the current cycle, duration change will apply on next cycle
-       // Or, optionally, ask the user if they want to restart the current cycle with the new duration
-       // For simplicity, we let it finish. The progress bar might look odd briefly.
-       console.log("Timer active, duration change will apply on the next cycle of this type or mode switch.");
+       // Optional: Could provide feedback that changes will apply next cycle
+       console.log("Timer activo, los cambios de duración se aplicarán en el próximo ciclo de este tipo o cambio de modo.");
      }
-
 
      setIsSettingsOpen(false);
    };
 
 
-   const progress = timeLeft > 0 ? ((getDurationForMode(mode) - timeLeft) / getDurationForMode(mode)) * 100 : (isActive ? 100 : 0); // Show 100% briefly when timer ends
+   const totalDuration = getDurationForMode(mode);
+   const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : (isActive ? 100 : 0); // Ensure progress is calculated correctly
 
 
   return (
-    <TooltipProvider>
-       <Card className="w-full max-w-md shadow-lg border border-border rounded-lg relative">
+    <TooltipProvider delayDuration={100}>
+       <Card className="w-full max-w-md shadow-lg border border-border rounded-lg relative overflow-hidden transition-all duration-300">
          <Tooltip>
           <TooltipTrigger asChild>
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
                 onClick={() => setIsSettingsOpen(true)}
                 aria-label="Configuración del temporizador"
               >
                 <Settings className="h-5 w-5" />
               </Button>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom">
             <p>Configurar duraciones</p>
           </TooltipContent>
         </Tooltip>
 
         <CardHeader className="items-center pt-6 pb-4">
-          {/* <CardTitle className="text-2xl font-semibold text-foreground">Temporizador Pomodoro</CardTitle> */}
            {/* Mode Buttons */}
-          <div className="flex space-x-2 mt-4">
+          <div className="flex space-x-2">
              <Tooltip>
               <TooltipTrigger asChild>
-                 <Button variant={mode === 'work' ? 'secondary' : 'ghost'} onClick={() => switchModeAndReset('work')}>Trabajo</Button>
+                 <Button
+                   variant={mode === 'work' ? 'secondary' : 'ghost'}
+                   onClick={() => switchModeAndReset('work')}
+                   className={cn("transition-colors duration-200", mode === 'work' && "font-semibold")}
+                   aria-pressed={mode === 'work'}
+                 >
+                   Trabajo
+                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Cambiar a modo de trabajo ({workDuration / 60} min)</p>
@@ -254,7 +278,14 @@ export function PomodoroTimer() {
             </Tooltip>
              <Tooltip>
               <TooltipTrigger asChild>
-                 <Button variant={mode === 'shortBreak' ? 'secondary' : 'ghost'} onClick={() => switchModeAndReset('shortBreak')}>Descanso Corto</Button>
+                 <Button
+                   variant={mode === 'shortBreak' ? 'secondary' : 'ghost'}
+                   onClick={() => switchModeAndReset('shortBreak')}
+                   className={cn("transition-colors duration-200", mode === 'shortBreak' && "font-semibold")}
+                   aria-pressed={mode === 'shortBreak'}
+                  >
+                   Descanso Corto
+                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Cambiar a modo de descanso corto ({shortBreakDuration / 60} min)</p>
@@ -262,7 +293,14 @@ export function PomodoroTimer() {
             </Tooltip>
              <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant={mode === 'longBreak' ? 'secondary' : 'ghost'} onClick={() => switchModeAndReset('longBreak')}>Descanso Largo</Button>
+                <Button
+                  variant={mode === 'longBreak' ? 'secondary' : 'ghost'}
+                  onClick={() => switchModeAndReset('longBreak')}
+                  className={cn("transition-colors duration-200", mode === 'longBreak' && "font-semibold")}
+                  aria-pressed={mode === 'longBreak'}
+                 >
+                   Descanso Largo
+                </Button>
                </TooltipTrigger>
               <TooltipContent>
                 <p>Cambiar a modo de descanso largo ({longBreakDuration / 60} min)</p>
@@ -271,16 +309,36 @@ export function PomodoroTimer() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-6 pt-4 pb-6">
-          <div className="text-7xl font-mono font-bold text-accent">{formatTime(timeLeft)}</div>
-          <Progress value={progress} className="w-full h-3 rounded-full" />
-          {/* Action Buttons */}
+           {/* Timer Display */}
+           <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-full flex items-center justify-center border-4 border-border shadow-inner bg-background">
+              <div
+                 className="absolute inset-0 rounded-full transition-colors duration-500"
+                 style={{
+                   background: `conic-gradient(hsl(var(--primary)) ${progress}%, transparent ${progress}%)`,
+                   opacity: 0.2, // Softer background progress
+                 }}
+               />
+             <div className="text-5xl sm:text-6xl font-mono font-bold text-accent z-10">{formatTime(timeLeft)}</div>
+           </div>
+
+           {/* Action Buttons */}
           <div className="flex space-x-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={toggleTimer} size="lg" variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md shadow w-[72px]">
-                   {/* Give button fixed width to prevent layout shift */}
-                  {isActive ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                </Button>
+                 <Button
+                   onClick={toggleTimer}
+                   size="lg"
+                   variant="default"
+                   className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md shadow w-[72px] transition-transform duration-150 ease-in-out active:scale-95"
+                   aria-label={isActive ? 'Pausar temporizador' : 'Iniciar temporizador'}
+                 >
+                   <span className={cn("transition-opacity duration-200", isActive ? "opacity-100" : "opacity-0 absolute")}>
+                      <Pause className="h-6 w-6" />
+                   </span>
+                    <span className={cn("transition-opacity duration-200", !isActive ? "opacity-100" : "opacity-0 absolute")}>
+                     <Play className="h-6 w-6" />
+                   </span>
+                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{isActive ? 'Pausar' : 'Iniciar'} Temporizador</p>
@@ -288,9 +346,14 @@ export function PomodoroTimer() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                 <Button onClick={() => resetCurrentTimer()} size="lg" variant="outline" className="rounded-md shadow w-[72px]">
-                   {/* Give button fixed width */}
-                   <RotateCcw className="h-6 w-6" />
+                 <Button
+                   onClick={resetCurrentTimer}
+                   size="lg"
+                   variant="outline"
+                   className="rounded-md shadow w-[72px] transition-transform duration-150 ease-in-out active:scale-95"
+                   aria-label="Reiniciar temporizador actual"
+                  >
+                   <RotateCcw className="h-6 w-6 transition-transform duration-300 group-hover:rotate-[-45deg]" />
                  </Button>
                </TooltipTrigger>
                <TooltipContent>
@@ -298,7 +361,29 @@ export function PomodoroTimer() {
               </TooltipContent>
             </Tooltip>
           </div>
-           <p className="text-sm text-muted-foreground pt-2">Pomodoros completados: {pomodoroCount}</p>
+           {/* Pomodoro Count and Reset */}
+          <div className="flex items-center space-x-2 pt-2">
+            <p className="text-sm text-muted-foreground">Pomodoros completados: {pomodoroCount}</p>
+             {pomodoroCount > 0 && (
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <Button
+                     onClick={resetPomodoroCount}
+                     variant="ghost"
+                     size="icon"
+                     className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors duration-200"
+                     aria-label="Reiniciar contador de pomodoros"
+                   >
+                     <RefreshCw className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
+                   </Button>
+                 </TooltipTrigger>
+                 <TooltipContent side="right">
+                   <p>Reiniciar contador</p>
+                 </TooltipContent>
+               </Tooltip>
+             )}
+           </div>
+
         </CardContent>
        </Card>
 
@@ -318,3 +403,4 @@ export function PomodoroTimer() {
      </TooltipProvider>
    );
 }
+

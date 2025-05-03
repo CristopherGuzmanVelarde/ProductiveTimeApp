@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface Task {
@@ -60,7 +61,8 @@ export function TaskList() {
       text: newTaskText.trim(),
       completed: false,
     };
-    setTasks(prevTasks => [...prevTasks, newTask]);
+    // Add task with a subtle animation feel (though CSS handles the real animation)
+    setTasks(prevTasks => [newTask, ...prevTasks]); // Add to the top
     setNewTaskText('');
   };
 
@@ -71,6 +73,7 @@ export function TaskList() {
   };
 
   const deleteTask = (id: number) => {
+     // Optionally add a temporary "deleting" state or animation trigger here
     setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
 
@@ -95,9 +98,26 @@ export function TaskList() {
           <div className="space-y-4">
             <div className="flex space-x-2">
                <Input disabled placeholder="Añadir nueva tarea..." className="flex-grow" />
-               <Button disabled><Plus /></Button>
+               <Button disabled><Plus className="h-4 w-4" /></Button>
             </div>
-            <p className="text-muted-foreground text-center py-4">Cargando tareas...</p>
+             {/* Use Skeleton Loader for a better loading state */}
+            <div className="space-y-3 pt-4">
+                <div className="flex items-center space-x-3 p-2 rounded-md">
+                   <Checkbox disabled className="rounded shadow-sm" />
+                   <div className="flex-grow h-4 bg-muted rounded"></div>
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
+                 </div>
+                <div className="flex items-center space-x-3 p-2 rounded-md">
+                   <Checkbox disabled className="rounded shadow-sm" />
+                   <div className="flex-grow h-4 bg-muted rounded w-3/4"></div>
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
+                 </div>
+                <div className="flex items-center space-x-3 p-2 rounded-md">
+                    <Checkbox disabled className="rounded shadow-sm" />
+                    <div className="flex-grow h-4 bg-muted rounded w-1/2"></div>
+                   <Button variant="ghost" size="icon" disabled className="h-7 w-7 opacity-50"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+             </div>
           </div>
         </CardContent>
       </Card>
@@ -106,59 +126,74 @@ export function TaskList() {
 
   // Client-side rendering
   return (
-    <TooltipProvider>
-        {/* Removed flex properties, let Tabs component handle layout */}
-       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px]"> {/* Added min-height */}
-        <CardHeader className="pt-6 pb-4">
-           {/* Adjusted title size for consistency */}
+    <TooltipProvider delayDuration={100}>
+       <Card className="w-full shadow-lg border border-border rounded-lg min-h-[400px] flex flex-col"> {/* Added flex flex-col */}
+        <CardHeader className="pt-6 pb-4 flex-shrink-0"> {/* Prevent header shrinking */}
           <CardTitle className="text-xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-         {/* Adjusted padding and structure for better fit in Tabs */}
-        <CardContent className="flex flex-col space-y-4 pt-2 pb-6 h-[calc(400px-80px)]"> {/* Calculate height based on min-height and header */}
-          <div className="flex space-x-2">
+        <CardContent className="flex flex-col space-y-4 pt-2 pb-6 flex-grow overflow-hidden"> {/* flex-grow and overflow-hidden */}
+          <div className="flex space-x-2 flex-shrink-0"> {/* Prevent input shrinking */}
             <Input
               type="text"
               placeholder="Añadir nueva tarea..."
               value={newTaskText}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
-              className="flex-grow rounded-md shadow-sm"
+              className="flex-grow rounded-md shadow-sm transition-shadow focus:shadow-md"
               aria-label="Nueva tarea"
             />
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={addTask} aria-label="Añadir Tarea" className="rounded-md shadow">
-                  <Plus />
+                 <Button
+                    onClick={addTask}
+                    aria-label="Añadir Tarea"
+                    className="rounded-md shadow transition-transform duration-150 ease-in-out active:scale-95"
+                    disabled={!newTaskText.trim()} // Disable if input is empty
+                  >
+                  <Plus className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Añadir nueva tarea (o presiona Enter)</p>
+                <p>Añadir tarea (Enter)</p>
               </TooltipContent>
             </Tooltip>
           </div>
-           {/* Use flex-grow on ScrollArea for dynamic height */}
-          <ScrollArea className="flex-grow pr-4 -mr-4">
+          <ScrollArea className="flex-grow pr-4 -mr-4"> {/* Let ScrollArea handle scrolling */}
             {tasks.length === 0 ? (
-               <p className="text-muted-foreground text-center py-4">No hay tareas pendientes.</p>
+               <p className="text-muted-foreground text-center py-10 italic">¡Todo listo por hoy!</p>
              ) : (
                 <ul className="space-y-3">
                   {tasks.map(task => (
-                    <li key={task.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-secondary transition-colors group">
+                    <li
+                      key={task.id}
+                      className={cn(
+                          "flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ease-in-out group",
+                          task.completed ? "bg-secondary/50" : "hover:bg-secondary", // subtle background on complete
+                          "animate-task-appear" // Add appear animation class
+                       )}
+                      style={{ '--animation-order': tasks.findIndex(t => t.id === task.id) } as React.CSSProperties} // Stagger animation
+                      >
                       <Checkbox
                         id={`task-${task.id}`}
                         checked={task.completed}
                         onCheckedChange={() => toggleTaskCompletion(task.id)}
                         aria-labelledby={`task-label-${task.id}`}
-                        className="rounded shadow-sm"
+                        className="rounded shadow-sm transition-colors duration-200"
                       />
                       <label
                         id={`task-label-${task.id}`}
                         htmlFor={`task-${task.id}`}
                         className={cn(
-                          "flex-grow cursor-pointer text-sm break-words", // Allow text wrapping
-                          task.completed ? "line-through text-muted-foreground" : "text-foreground"
-                        )}
+                          "flex-grow cursor-pointer text-sm break-words transition-colors duration-200",
+                           task.completed ? "line-through text-muted-foreground italic" : "text-foreground"
+                         )}
                       >
+                         {/* Add icon based on completion state */}
+                        {task.completed ? (
+                          <CheckCircle2 className="inline-block h-4 w-4 mr-2 text-primary" />
+                        ) : (
+                          <Circle className="inline-block h-4 w-4 mr-2 text-muted-foreground/50" />
+                        )}
                         {task.text}
                       </label>
                       <Tooltip>
@@ -166,15 +201,19 @@ export function TaskList() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full" // Make visible on hover/focus
+                             className={cn(
+                               "h-7 w-7 text-muted-foreground hover:text-destructive transition-all duration-200 rounded-full",
+                                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", // Make visible on hover/focus
+                               "hover:scale-110 active:scale-95" // Subtle scale animation
+                            )}
                             onClick={() => deleteTask(task.id)}
                             aria-label={`Eliminar tarea: ${task.text}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Eliminar esta tarea</p>
+                        <TooltipContent side="left">
+                          <p>Eliminar tarea</p>
                         </TooltipContent>
                       </Tooltip>
                     </li>
@@ -187,3 +226,4 @@ export function TaskList() {
     </TooltipProvider>
   );
 }
+
