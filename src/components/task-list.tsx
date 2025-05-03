@@ -26,36 +26,52 @@ export function TaskList() {
     setIsClient(true);
     const storedTasks = localStorage.getItem('pomodoroTasks');
     if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
+       try {
+        const parsedTasks = JSON.parse(storedTasks);
+        if (Array.isArray(parsedTasks)) {
+            setTasks(parsedTasks);
+        } else {
+            console.warn("Stored tasks are not an array, resetting.");
+            localStorage.removeItem('pomodoroTasks');
+        }
+       } catch (error) {
+           console.error("Error parsing tasks from localStorage:", error);
+           localStorage.removeItem('pomodoroTasks'); // Clear corrupted data
+       }
     }
   }, []);
 
   // Save tasks to localStorage whenever tasks change
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem('pomodoroTasks', JSON.stringify(tasks));
+        try {
+            localStorage.setItem('pomodoroTasks', JSON.stringify(tasks));
+        } catch (error) {
+            console.error("Error saving tasks to localStorage:", error);
+            // Optionally notify user or handle error
+        }
     }
   }, [tasks, isClient]);
 
   const addTask = () => {
     if (newTaskText.trim() === '') return;
     const newTask: Task = {
-      id: Date.now(),
-      text: newTaskText,
+      id: Date.now(), // Use timestamp for a simple unique ID
+      text: newTaskText.trim(),
       completed: false,
     };
-    setTasks([...tasks, newTask]);
+    setTasks(prevTasks => [...prevTasks, newTask]);
     setNewTaskText('');
   };
 
   const toggleTaskCompletion = (id: number) => {
-    setTasks(tasks.map(task =>
+    setTasks(prevTasks => prevTasks.map(task =>
       task.id === id ? { ...task, completed: !task.completed } : task
     ));
   };
 
   const deleteTask = (id: number) => {
-    setTasks(tasks.filter(task => task.id !== id));
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,27 +84,34 @@ export function TaskList() {
     }
   };
 
+  // Server-side rendering placeholder
   if (!isClient) {
-    // Render placeholder or loading state on server
     return (
-       <Card className="w-full shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl">Lista de Tareas</CardTitle>
+       <Card className="w-full shadow-lg border border-border rounded-lg">
+        <CardHeader className="pt-6 pb-4">
+          <CardTitle className="text-2xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p>Cargando tareas...</p>
+        <CardContent className="pt-4 pb-6">
+          <div className="space-y-4">
+            <div className="flex space-x-2">
+               <Input disabled placeholder="Añadir nueva tarea..." className="flex-grow" />
+               <Button disabled><Plus /></Button>
+            </div>
+            <p className="text-muted-foreground text-center py-4">Cargando tareas...</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
+  // Client-side rendering
   return (
     <TooltipProvider>
-      <Card className="w-full shadow-lg flex flex-col h-full max-h-[600px]">
-        <CardHeader>
-          <CardTitle className="text-2xl">Lista de Tareas</CardTitle>
+       <Card className="w-full shadow-lg flex flex-col h-full max-h-[600px] border border-border rounded-lg">
+        <CardHeader className="pt-6 pb-4">
+          <CardTitle className="text-2xl font-semibold text-foreground">Lista de Tareas</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col flex-grow space-y-4 overflow-hidden">
+        <CardContent className="flex flex-col flex-grow space-y-4 overflow-hidden pt-4 pb-6">
           <div className="flex space-x-2">
             <Input
               type="text"
@@ -96,61 +119,64 @@ export function TaskList() {
               value={newTaskText}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
-              className="flex-grow"
+              className="flex-grow rounded-md shadow-sm"
+              aria-label="Nueva tarea"
             />
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={addTask} aria-label="Añadir Tarea">
+                <Button onClick={addTask} aria-label="Añadir Tarea" className="rounded-md shadow">
                   <Plus />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Añadir nueva tarea</p>
+                <p>Añadir nueva tarea (o presiona Enter)</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <ScrollArea className="flex-grow pr-4">
-            <ul className="space-y-3">
-              {tasks.map(task => (
-                <li key={task.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-secondary transition-colors">
-                  <Checkbox
-                    id={`task-${task.id}`}
-                    checked={task.completed}
-                    onCheckedChange={() => toggleTaskCompletion(task.id)}
-                    aria-labelledby={`task-label-${task.id}`}
-                  />
-                  <label
-                    id={`task-label-${task.id}`}
-                    htmlFor={`task-${task.id}`}
-                    className={cn(
-                      "flex-grow cursor-pointer text-sm",
-                      task.completed ? "line-through text-muted-foreground" : "text-foreground"
-                    )}
-                  >
-                    {task.text}
-                  </label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteTask(task.id)}
-                        aria-label={`Eliminar tarea ${task.text}`}
+          <ScrollArea className="flex-grow pr-4 -mr-4"> {/* Offset padding for scrollbar */}
+            {tasks.length === 0 ? (
+               <p className="text-muted-foreground text-center py-4">No hay tareas pendientes.</p>
+             ) : (
+                <ul className="space-y-3">
+                  {tasks.map(task => (
+                    <li key={task.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-secondary transition-colors group">
+                      <Checkbox
+                        id={`task-${task.id}`}
+                        checked={task.completed}
+                        onCheckedChange={() => toggleTaskCompletion(task.id)}
+                        aria-labelledby={`task-label-${task.id}`}
+                        className="rounded shadow-sm"
+                      />
+                      <label
+                        id={`task-label-${task.id}`}
+                        htmlFor={`task-${task.id}`}
+                        className={cn(
+                          "flex-grow cursor-pointer text-sm break-words", // Allow text wrapping
+                          task.completed ? "line-through text-muted-foreground" : "text-foreground"
+                        )}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Eliminar tarea</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </li>
-              ))}
-              {tasks.length === 0 && (
-                 <p className="text-muted-foreground text-center py-4">No hay tareas pendientes.</p>
-              )}
-            </ul>
+                        {task.text}
+                      </label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full" // Make visible on hover/focus
+                            onClick={() => deleteTask(task.id)}
+                            aria-label={`Eliminar tarea: ${task.text}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Eliminar esta tarea</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </li>
+                  ))}
+                </ul>
+             )}
           </ScrollArea>
         </CardContent>
       </Card>
