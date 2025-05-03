@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeProvider } from "@/context/theme-context"; // Import custom provider
+import { ColorPaletteSelector } from '@/components/color-palette-selector'; // Import new selector
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,14 +28,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider> {/* Use custom ThemeProvider */}
           <div className="absolute top-4 right-4 z-50">
-             <ThemeToggle />
+             <ColorPaletteSelector /> {/* Use new ColorPaletteSelector */}
           </div>
           {children}
           <Toaster />
