@@ -16,33 +16,37 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeName>(() => {
-    // Get initial theme on the client side only
-    if (typeof window !== 'undefined') {
-      return getInitialTheme();
+  // Initialize state consistently to 'default' on both server and client initial render
+  const [theme, setThemeState] = useState<ThemeName>('default');
+  const [isMounted, setIsMounted] = useState(false); // Track if component has mounted
+
+  useEffect(() => {
+    // This effect runs only on the client, after the initial render
+    setIsMounted(true);
+
+    // Get the actual theme preference from localStorage
+    const initialTheme = getInitialTheme(); // Reads localStorage if available
+
+    // Update the state and apply the theme based on localStorage preference
+    setThemeState(initialTheme);
+    applyTheme(initialTheme);
+
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Effect to apply theme changes whenever the theme state is updated *after* mount
+  useEffect(() => {
+    // Only apply theme changes after the initial mount effect has determined the theme
+    if (isMounted) {
+      applyTheme(theme);
+      // Saving to localStorage happens inside applyTheme
     }
-    return 'default'; // Server-side default
-  });
-  const [isClient, setIsClient] = useState(false);
-
-  // Apply theme on initial client load and when theme state changes
-  useEffect(() => {
-    setIsClient(true); // Mark that we are on the client
-    applyTheme(theme);
-  }, [theme]);
-
-  // Apply the initial theme once the component mounts on the client
-  useEffect(() => {
-      const initialTheme = getInitialTheme();
-      setThemeState(initialTheme);
-      applyTheme(initialTheme); // Ensure styles are applied immediately
-  }, []);
+  }, [theme, isMounted]); // Runs when theme state changes or after mount status changes
 
 
   const setTheme = useCallback((themeName: ThemeName) => {
     if (themes[themeName]) {
       setThemeState(themeName);
-      // applyTheme is called by the effect above
+      // The effect above will handle applying the theme and saving to localStorage via applyTheme
     } else {
       console.warn(`Theme "${themeName}" not found.`);
     }
@@ -50,13 +54,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   const availableThemes = Object.keys(themes) as ThemeName[];
 
-  // Prevent rendering children until the client-side theme is determined
-   if (!isClient && typeof window === 'undefined') {
-     // Optional: Render a loading state or null during SSR/build time
-     // This helps avoid hydration mismatches if initial theme differs
-     return null;
-   }
-
+  // Render children immediately. The initial render uses 'default' theme state,
+  // matching the server. The useEffect handles client-side theme application
+  // after hydration.
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, availableThemes }}>
