@@ -3,46 +3,46 @@
 
 **Tiempo Productivo** is a web application designed to help you boost your productivity and manage your tasks effectively. It combines a flexible Pomodoro timer with a comprehensive task list, all wrapped in a clean and customizable interface.
 
-## Features
+## ✨ Features
 
-*   **Pomodoro Timer:**
+*   **🍅 Pomodoro Timer:**
     *   Customizable work, short break, and long break durations.
     *   Visual progress indicator for the current timer segment.
-    *   Mode switching (Work, Short Break, Long Break).
+    *   Easy mode switching (Work, Short Break, Long Break).
     *   Pomodoro count tracker with an option to reset.
-    *   Browser tab title updates to show current timer status.
-    *   Settings modal to adjust timer durations, saved locally.
-    *   Pulse animation when a timer segment ends.
+    *   Dynamic browser tab title updates to show current timer status.
+    *   Persistent settings modal to adjust timer durations (saved locally).
+    *   Subtle pulse animation when a timer segment ends.
 
-*   **Task List:**
-    *   Add, complete, and delete tasks.
+*   **✅ Task List:**
+    *   Add, complete, and delete tasks seamlessly.
     *   Edit task details including name, notes, due date, and due time.
-    *   Assign due dates and specific times to tasks using a calendar and time picker.
-    *   Task sorting options:
+    *   Assign due dates and specific times to tasks using an intuitive calendar and time picker.
+    *   Flexible task sorting options:
         *   Most recent (default)
         *   Due date (ascending/descending)
         *   Completion status (pending first/completed first)
-    *   Task templates to quickly add common tasks.
-    *   Confetti animation upon task completion for a bit of fun!
-    *   Task details are editable via a slide-out sheet.
-    *   Empty state with a friendly message when no tasks are present.
-    *   Tasks are saved locally in the browser.
+    *   Quickly add common tasks using pre-defined task templates.
+    *   🎉 Fun confetti animation upon task completion!
+    *   Task details are editable via a convenient slide-out sheet.
+    *   Friendly empty state message when no tasks are present.
+    *   Tasks are saved locally in the browser for persistence.
 
-*   **Customizable Interface:**
+*   **🎨 Customizable Interface:**
     *   Multiple color palettes to choose from, allowing you to personalize the app's appearance.
-    *   The selected theme is saved locally.
-    *   Responsive design for use on various screen sizes.
+    *   Your selected theme is saved locally.
+    *   Responsive design for optimal use on various screen sizes.
 
-*   **Modern Tech Stack:**
+*   **🚀 Modern Tech Stack:**
     *   Built with Next.js (App Router) and React.
     *   Styled with Tailwind CSS.
     *   Utilizes ShadCN UI components for a polished look and feel.
     *   Client-side state management with React Hooks and Context API.
 
-## Getting Started
+## 🚀 Getting Started
 
 1.  **Explore the Timer:**
-    *   Click on the "Temporizador" tab.
+    *   Navigate to the "Temporizador" tab.
     *   Adjust work/break durations via the settings icon (⚙️).
     *   Start, pause, and reset the timer as needed.
 2.  **Manage Your Tasks:**
@@ -55,7 +55,7 @@
 3.  **Customize Your Theme:**
     *   Click the palette icon (🎨) in the top right corner to select your preferred color scheme.
 
-## Project Structure
+## 📂 Project Structure
 
 *   `src/app/`: Contains the main application pages and layout.
     *   `page.tsx`: The main page component.
@@ -73,5 +73,6 @@
 *   `src/hooks/`: Custom React hooks (e.g., `use-toast.ts`, `use-mobile.ts`).
 *   `public/`: Static assets.
 
+---
+
 This project was built using Firebase Studio.
-```
