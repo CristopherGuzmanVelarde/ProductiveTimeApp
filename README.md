@@ -1,61 +1,63 @@
 
-# Tiempo Productivo - Pomodoro & Task Manager
+# Tiempo Productivo - Pomodoro y Gestor de Tareas
 
-**Tiempo Productivo** is a web application designed to help you boost your productivity and manage your tasks effectively. It combines a flexible Pomodoro timer with a comprehensive task list, all wrapped in a clean and customizable interface.
+**Tiempo Productivo** es una aplicación web diseñada para ayudarte a aumentar tu productividad y gestionar tus tareas de forma eficaz. Combina un temporizador Pomodoro flexible con una lista completa de tareas, todo envuelto en una interfaz limpia y personalizable.
 
 ## ✨ Features
+## ✨ Características
 
-*   **🍅 Pomodoro Timer:**
-    *   Customizable work, short break, and long break durations.
-    *   Visual progress indicator for the current timer segment.
-    *   Easy mode switching (Work, Short Break, Long Break).
-    *   Pomodoro count tracker with an option to reset.
-    *   Dynamic browser tab title updates to show current timer status.
-    *   Persistent settings modal to adjust timer durations (saved locally).
-    *   Subtle pulse animation when a timer segment ends.
+*   **🍅 Temporizador Pomodoro:**
+    *   Duraciones personalizables para el trabajo, pausas cortas y pausas largas.
+    *   Indicador visual de progreso para el segmento de temporizador actual.
+    *   Cambio de modo sencillo (Trabajo, Pausa Corta, Pausa Larga).
+    *   Contador de Pomodoros con opción de reinicio.
+    *   Actualizaciones dinámicas del título de la pestaña del navegador para mostrar el estado actual del temporizador.
+    *   Modal de configuración persistente para ajustar las duraciones del temporizador (guardado localmente).
+    *   Sutil animación de pulso cuando termina un segmento del temporizador.
 
-*   **✅ Task List:**
-    *   Add, complete, and delete tasks seamlessly.
-    *   Edit task details including name, notes, due date, and due time.
-    *   Assign due dates and specific times to tasks using an intuitive calendar and time picker.
-    *   Flexible task sorting options:
-        *   Most recent (default)
-        *   Due date (ascending/descending)
-        *   Completion status (pending first/completed first)
-    *   Quickly add common tasks using pre-defined task templates.
-    *   🎉 Fun confetti animation upon task completion!
-    *   Task details are editable via a convenient slide-out sheet.
-    *   Friendly empty state message when no tasks are present.
-    *   Tasks are saved locally in the browser for persistence.
+*   **✅ Lista de Tareas:**
+    *   Añade, completa y elimina tareas sin problemas.
+    *   Edita los detalles de la tarea, incluyendo nombre, notas, fecha de vencimiento y hora de vencimiento.
+    *   Asigna fechas y horas específicas a las tareas usando un calendario y selector de hora intuitivos.
+    *   Opciones flexibles para ordenar tareas:
+        *   Más reciente (por defecto)
+        *   Fecha de vencimiento (ascendente/descendente)
+        *   Estado de completado (pendientes primero/completadas primero)
+    *   Añade rápidamente tareas comunes usando plantillas de tareas predefinidas.
+    *   🎉 ¡Divertida animación de confeti al completar una tarea!
+    *   Los detalles de la tarea se pueden editar a través de una cómoda hoja deslizante.
+    *   Mensaje amigable de estado vacío cuando no hay tareas presentes.
+    *   Las tareas se guardan localmente en el navegador para persistencia.
 
-*   **🎨 Customizable Interface:**
-    *   Multiple color palettes to choose from, allowing you to personalize the app's appearance.
-    *   Your selected theme is saved locally.
-    *   Responsive design for optimal use on various screen sizes.
+*   **🎨 Interfaz Personalizable:**
+    *   Múltiples paletas de colores para elegir, lo que te permite personalizar la apariencia de la aplicación.
+    *   El tema seleccionado se guarda localmente.
+    *   Diseño responsivo para un uso óptimo en varios tamaños de pantalla.
 
-*   **🚀 Modern Tech Stack:**
-    *   Built with Next.js (App Router) and React.
-    *   Styled with Tailwind CSS.
-    *   Utilizes ShadCN UI components for a polished look and feel.
-    *   Client-side state management with React Hooks and Context API.
+*   **🚀 Stack Tecnológico Moderno:**
+    *   Construido con Next.js (App Router) y React.
+    *   Diseñado con Tailwind CSS.
+    *   Utiliza componentes ShadCN UI para un aspecto pulido y profesional.
+    *   Gestión de estado del lado del cliente con React Hooks y Context API.
 
-## 🚀 Getting Started
+## 🚀 Empezando
 
-1.  **Explore the Timer:**
-    *   Navigate to the "Temporizador" tab.
-    *   Adjust work/break durations via the settings icon (⚙️).
-    *   Start, pause, and reset the timer as needed.
-2.  **Manage Your Tasks:**
-    *   Switch to the "Tareas" tab.
-    *   Add new tasks using the input field.
-    *   Use task templates (📋 icon) for quick entries.
-    *   Click on a task to open the details sheet and set due dates, times, or add notes.
-    *   Mark tasks as complete using the checkboxes.
-    *   Sort your tasks using the dropdown menu.
-3.  **Customize Your Theme:**
-    *   Click the palette icon (🎨) in the top right corner to select your preferred color scheme.
+1.  **Explora el Temporizador:**
+    *   Navega a la pestaña "Temporizador".
+    *   Ajusta las duraciones de trabajo/pausa a través del icono de configuración (⚙️).
+    *   Inicia, pausa y reinicia el temporizador según sea necesario.
+2.  **Gestiona tus Tareas:**
+    *   Cambia a la pestaña "Tareas".
+    *   Añade nuevas tareas usando el campo de entrada.
+    *   Usa plantillas de tareas (icono 📋) para entradas rápidas.
+    *   Haz clic en una tarea para abrir la hoja de detalles y establecer fechas de vencimiento, horas o añadir notas.
+    *   Marca las tareas como completadas usando las casillas de verificación.
+    *   Ordena tus tareas usando el menú desplegable.
+3.  **Personaliza tu Tema:**
+    *   Haz clic en el icono de paleta (🎨) en la esquina superior derecha para seleccionar tu esquema de colores preferido.
 
 ## 📂 Project Structure
+## 📂 Estructura del Proyecto
 
 *   `src/app/`: Contains the main application pages and layout.
     *   `page.tsx`: The main page component.
@@ -73,6 +75,3 @@
 *   `src/hooks/`: Custom React hooks (e.g., `use-toast.ts`, `use-mobile.ts`).
 *   `public/`: Static assets.
 
----
-
-This project was built using Firebase Studio.
