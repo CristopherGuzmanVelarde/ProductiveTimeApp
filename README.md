@@ -3,7 +3,6 @@
 
 **Tiempo Productivo** es una aplicación web diseñada para ayudarte a aumentar tu productividad y gestionar tus tareas de forma eficaz. Combina un temporizador Pomodoro flexible con una lista completa de tareas, todo envuelto en una interfaz limpia y personalizable.
 
-## ✨ Features
 ## ✨ Características
 
 *   **🍅 Temporizador Pomodoro:**
