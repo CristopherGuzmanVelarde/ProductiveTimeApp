@@ -14,6 +14,8 @@
     *   Actualizaciones dinámicas del título de la pestaña del navegador para mostrar el estado actual del temporizador.
     *   Modal de configuración persistente para ajustar las duraciones del temporizador (guardado localmente).
     *   Sutil animación de pulso cuando termina un segmento del temporizador.
+      
+![image](https://github.com/user-attachments/assets/e92db4b2-a394-4bce-903e-2dd8ef4b5686)
 
 *   **✅ Lista de Tareas:**
     *   Añade, completa y elimina tareas sin problemas.
@@ -28,6 +30,9 @@
     *   Los detalles de la tarea se pueden editar a través de una cómoda hoja deslizante.
     *   Mensaje amigable de estado vacío cuando no hay tareas presentes.
     *   Las tareas se guardan localmente en el navegador para persistencia.
+
+![image](https://github.com/user-attachments/assets/95bafc63-6d84-41c7-8321-c646d09ccd3c)
+
 
 *   **🎨 Interfaz Personalizable:**
     *   Múltiples paletas de colores para elegir, lo que te permite personalizar la apariencia de la aplicación.
